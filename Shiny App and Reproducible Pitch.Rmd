@@ -1,0 +1,83 @@
+---
+title: "Shiny Application and Reproducible Pitch"
+author: "Careme Carty"
+date: "29 July 2018"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, error = FALSE)
+```
+
+##**Introduction**
+
+####*The iris database is a famous (Fisher's or Anderson's) data set gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor, and virginica.The variables in this dataset are:*
+
+- Petal.Length: length of the petal
+- Petal.Width: width of the petal
+- Sepal.Length: length of the sepal
+- Sepal.Width: width of the sepal
+
+##**shiny iris ui.R code**
+
+```{r, echo=TRUE, eval= FALSE}
+library(shiny)
+library(ggplot2)
+
+IrisData <- iris[-c(5)]
+
+shinyUI(fluidPage(
+  titlePanel("Iris Data"),
+  sidebarLayout(
+    sidebarPanel(
+       sliderInput("sampleSize", "Sample size:", min = 20, max = nrow(IrisData), value = min(20, nrow(IrisData)), 
+                   step = 5, round = 0),
+       selectInput("x", "X-axis", names(IrisData)),
+       selectInput("y", "Y-axis", names(IrisData), names(IrisData)[[2]]),
+
+       # checkboxInput('jitter', 'Jitter'),
+       checkboxInput('smooth', 'Smooth')
+    ),
+    
+    # Show a plot of the generated distribution
+    mainPanel(
+      h3("Graph of the Iris Dataset"),
+       plotOutput("myplot")
+    )
+  )
+))
+```
+
+##**shiny iris Serve.R code**
+```{r, echo=TRUE, eval= FALSE}
+library(shiny)
+library(ggplot2)
+
+shinyServer(function(input, output) {
+   
+  IrisData <- reactive( {
+    iris[sample(nrow(iris), input$sampleSize),]
+  })
+
+  output$myplot <- reactivePlot(function() {
+    plot <- ggplot(IrisData(), aes_string(x = input$x,  y = input$y, color = "Species")) + geom_point() + 
+      scale_color_manual(values = c("Red", "Blue", "black"))
+
+    # if(input$jitter)
+    #       plot <- plot + geom_jitter()
+    if(input$smooth)
+      plot <- plot + geom_smooth()
+
+    print(plot)
+    
+  }
+  )
+    
+})
+```
+
+##**Iris Shiny App**
+####*This application lets the users graph the width and the length of the diferent species of iris, such as Sepal width vs sepal length or petal width vs petal length and so on, on the x and y axis. Additionally, there is a smoothing option for the data that provides smoothing for each of the three species separately. A long with a sample size option for the entire database.*
